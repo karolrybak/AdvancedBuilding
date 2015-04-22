@@ -2,44 +2,104 @@
 using ColossalFramework.Globalization;
 using ColossalFramework.UI;
 using ICities;
+using System.Reflection;
 using UnityEngine;
 
 namespace AdvancedBuilding
 {
     class UIX
     {
-        public static void Panel()
+        public static Texture2D LoadTextureFromAssembly(string path, bool readOnly = true)
+        {
+            Assembly assembly = Assembly.GetExecutingAssembly();
+            System.IO.Stream textureStream = assembly.GetManifestResourceStream(path);
+
+            var buf = new byte[textureStream.Length];  //declare arraysize
+            textureStream.Read(buf, 0, buf.Length); // read from stream to byte array
+            var tex = new Texture2D(2, 2, TextureFormat.ARGB32, false);
+            tex.LoadImage(buf);
+            tex.Apply(false, readOnly);
+            return tex;
+        }
+
+        public static UITextureAtlas CreateTextureAtlas(string atlasName, string[] spriteNames, string assemblyPath)
         {
 
-            ////Header panel
-            //var headerPanel = panel.AddUIComponent(typeof(UIPanel)) as UIPanel;
-            //headerPanel.width = 360;
-            //headerPanel.height = 40;
+            Material baseMaterial = UIView.GetAView().defaultAtlas.material;
+            const int size = 1024;
+            var atlasTex = new Texture2D(size, size, TextureFormat.ARGB32, false);
 
-            //var nameLabel = headerPanel.AddUIComponent(typeof(UILabel)) as UILabel;
-            //nameLabel.autoSize = false;
-            //nameLabel.width = 360;
-            //nameLabel.height = 40;
-            //nameLabel.relativePosition = Vector3.zero;
-            //nameLabel.textAlignment = UIHorizontalAlignment.Center;
-            //nameLabel.verticalAlignment = UIVerticalAlignment.Middle;
-            //nameLabel.textScale = 1.3125f;
-            //nameLabel.text = "Advanced building";
+            var textures = new Texture2D[spriteNames.Length];
+            var rects = new Rect[spriteNames.Length];
 
-            ////var closeButton = headerPanel.AddUIComponent(typeof(UIButton)) as UIButton;
-            ////closeButton.width = 32;
-            ////closeButton.height = 32;
-            ////closeButton.normalFgSprite = "buttonclose";
-            ////closeButton.hoveredFgSprite = "buttonclosehover";
-            ////closeButton.pressedFgSprite = "buttonclosepressed";
-            ////closeButton.relativePosition = new Vector3(324, 4);
-            ////closeButton.eventClick += CloseWindow;
+            for (int i = 0; i < spriteNames.Length; i++)
+            {
+                textures[i] = LoadTextureFromAssembly(assemblyPath + spriteNames[i] + ".png", false);
+            }
 
-            //var dragHandle = headerPanel.AddUIComponent(typeof(UIDragHandle)) as UIDragHandle;
-            //dragHandle.width = 320;
-            //dragHandle.height = 40;
-            //dragHandle.relativePosition = Vector3.zero;
-            //dragHandle.target = panel;
+            rects = atlasTex.PackTextures(textures, 2, size);
+
+
+            UITextureAtlas atlas = ScriptableObject.CreateInstance<UITextureAtlas>();
+
+            // Setup atlas
+            Material material = UnityEngine.Object.Instantiate(baseMaterial);
+            material.mainTexture = atlasTex;
+            atlas.material = material;
+            atlas.name = atlasName;
+
+            // Add SpriteInfo
+            for (int i = 0; i < spriteNames.Length; i++)
+            {
+                var spriteInfo = new UITextureAtlas.SpriteInfo
+                {
+                    name = spriteNames[i],
+                    texture = atlasTex,
+                    region = rects[i]
+                };
+                atlas.AddSprite(spriteInfo);
+            }
+            return atlas;
+        }
+
+        public static void Panel(UIPanel panel, string title)
+        {
+
+            //Header panel
+            var headerPanel = panel.AddUIComponent(typeof(UIPanel)) as UIPanel;
+            headerPanel.width = panel.width;
+            headerPanel.height = 40;
+            headerPanel.relativePosition = Vector3.zero;
+
+            var nameLabel = headerPanel.AddUIComponent(typeof(UILabel)) as UILabel;
+            nameLabel.autoSize = false;
+            nameLabel.width = panel.width;
+            nameLabel.height = 40;
+            nameLabel.relativePosition = Vector3.zero;
+            nameLabel.textAlignment = UIHorizontalAlignment.Center;
+            nameLabel.verticalAlignment = UIVerticalAlignment.Middle;
+            nameLabel.textScale = 1.3125f;
+            nameLabel.text = title;
+
+            var closeButton = headerPanel.AddUIComponent(typeof(UIButton)) as UIButton;
+            closeButton.width = 32;
+            closeButton.height = 32;
+            closeButton.normalFgSprite = "buttonclose";
+            closeButton.hoveredFgSprite = "buttonclosehover";
+            closeButton.pressedFgSprite = "buttonclosepressed";
+            closeButton.relativePosition = new Vector3(panel.width - 40, 4);
+            closeButton.eventClick += closeButton_eventClick;
+
+            var dragHandle = headerPanel.AddUIComponent(typeof(UIDragHandle)) as UIDragHandle;
+            dragHandle.width = panel.width - 40;
+            dragHandle.height = 40;
+            dragHandle.relativePosition = Vector3.zero;
+            dragHandle.target = panel;
+        }
+
+        static void closeButton_eventClick(UIComponent component, UIMouseEventParameter eventParam)
+        {
+            component.parent.parent.isVisible = false;
         }
 
         public static void Button(UIButton button, string texture, Vector2 size)
@@ -92,6 +152,22 @@ namespace AdvancedBuilding
             dropdownButton.verticalAlignment = UIVerticalAlignment.Middle;
             dropdownButton.zOrder = 0;
             dropdownButton.textScale = 0.8f;
+        }
+
+        public static UILabel Label(UIComponent parent, string text, Vector3 position)
+        {
+            var label = Label(parent, text);
+            label.relativePosition = position;
+            return label;
+        }
+
+        public static UILabel Label(UIComponent parent, string text)
+        {
+            var label = parent.AddUIComponent<UILabel>();
+            label.textAlignment = UIHorizontalAlignment.Center;
+            label.verticalAlignment = UIVerticalAlignment.Middle;
+            label.text = text;
+            return label;
         }
     }
 }

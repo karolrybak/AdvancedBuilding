@@ -59,8 +59,6 @@ namespace AdvancedBuilding
                 serviceDropdown.AddItem(name);
             }
 
-            
-            serviceDropdown.relativePosition = new Vector3(10.0f, 10.0f);
             serviceDropdown.selectedIndex = 0;
             serviceDropdown.eventSelectedIndexChanged += serviceDropdown_eventSelectedIndexChanged;
         }
@@ -84,8 +82,6 @@ namespace AdvancedBuilding
                 levelDropdown.AddItem(name);
             }
 
-
-            levelDropdown.relativePosition = new Vector3(10.0f, 50.0f);
             levelDropdown.selectedIndex = 0;
             levelDropdown.eventSelectedIndexChanged += levelDropdown_eventSelectedIndexChanged; 
         }
@@ -98,8 +94,7 @@ namespace AdvancedBuilding
         void ItemsDropdown()
         {
             itemsDropdown = panel.AddUIComponent<UIDropDown>();
-            UIX.DropDown(itemsDropdown);
-            itemsDropdown.relativePosition = new Vector3(10.0f, 90.0f);
+            UIX.DropDown(itemsDropdown);            
             itemsDropdown.selectedIndex = 0;
             itemsDropdown.eventSelectedIndexChanged += itemsDropdown_eventSelectedIndexChanged;
             itemsDropdown.eventClick += itemsDropdown_eventClick;
@@ -130,8 +125,7 @@ namespace AdvancedBuilding
         void ModesDropdown()
         {
             modesDropdown = panel.AddUIComponent<UIDropDown>();
-            UIX.DropDown(modesDropdown);
-            modesDropdown.relativePosition = new Vector3(10.0f, 130.0f);
+            UIX.DropDown(modesDropdown);            
             var values = Enum.GetValues(typeof(BuildingInfo.PlacementMode));
 
             
@@ -165,9 +159,7 @@ namespace AdvancedBuilding
         {
             netToolDropdown = panel.AddUIComponent<UIDropDown>();
             UIX.DropDown(netToolDropdown);
-            netToolDropdown.relativePosition = new Vector3(10.0f, 190.0f);
             
-
             for (uint i = 0; i < PrefabCollection<NetInfo>.PrefabCount(); i++ )
             {
                 var prefab = PrefabCollection<NetInfo>.GetPrefab(i);
@@ -202,9 +194,7 @@ namespace AdvancedBuilding
         {
             propToolDropdown = panel.AddUIComponent<UIDropDown>();
             UIX.DropDown(propToolDropdown);
-            propToolDropdown.relativePosition = new Vector3(10.0f, 230.0f);
             
-
             for (uint i = 0; i < PrefabCollection<PropInfo>.PrefabCount(); i++)
             {
                 var prefab = PrefabCollection<PropInfo>.GetPrefab(i);
@@ -255,19 +245,26 @@ namespace AdvancedBuilding
             UIComponent tsBar = uiView.FindUIComponent("TSBar");
             if (mainButton == null)
             {
+                var atlas = UIX.CreateTextureAtlas("AdvancedBuildingUI", new string[] { "AdvancedBuilding" }, "AdvancedBuilding.");
+
                 panel = tsBar.AddUIComponent<UIPanel>();
-                panel.backgroundSprite = "SubcategoriesPanel";
+
+                panel.backgroundSprite = "MenuPanel2";
                 panel.name = "BuildingPanel";
                 panel.isVisible = false;
-                panel.width = 200;
+                panel.width = 300;
                 panel.height = 400;
                 panel.absolutePosition = new Vector2(40, 80);
+
+                panel.eventVisibilityChanged += panel_eventVisibilityChanged;
+
+                UIX.Panel(panel, "Advanced building");
 
 
                 var bulldozeButton = UIView.GetAView().FindUIComponent<UIMultiStateButton>("BulldozerButton");
                 mainButton = bulldozeButton.parent.AddUIComponent<UIButton>();
-
-                UIX.Button(mainButton, "buttonclose", new Vector2(43, 49));
+                mainButton.atlas = atlas;
+                UIX.Button(mainButton, "AdvancedBuilding", new Vector2(43, 49));
 
                 mainButton.relativePosition = new Vector2
                 (
@@ -284,7 +281,53 @@ namespace AdvancedBuilding
                 ModesDropdown();
                 NetToolDropdown();
                 PropToolDropdown();
+
+                serviceDropdown.relativePosition = new Vector3(110.0f, 50.0f);
+                levelDropdown.relativePosition = new Vector3(110.0f, 90.0f);
+                itemsDropdown.relativePosition = new Vector3(110.0f, 130.0f);
+                modesDropdown.relativePosition = new Vector3(110.0f, 170.0f);
+                netToolDropdown.relativePosition = new Vector3(110.0f, 230.0f);
+                propToolDropdown.relativePosition = new Vector3(110.0f, 270.0f);
+
+                var label1 = UIX.Label(panel, "Service", new Vector3(10, 50));
+                label1.textAlignment = UIHorizontalAlignment.Right;
+                label1.verticalAlignment = UIVerticalAlignment.Middle;
+                label1.size = new Vector2(90, 30);
+
+                var label2 = UIX.Label(panel, "Level", new Vector3(10, 90));
+                label2.textAlignment = UIHorizontalAlignment.Right;
+                label2.verticalAlignment = UIVerticalAlignment.Middle;
+                label2.size = new Vector2(90, 30);
+
+                var label3 = UIX.Label(panel, "Items", new Vector3(10, 130));
+                label3.textAlignment = UIHorizontalAlignment.Right;
+                label3.verticalAlignment = UIVerticalAlignment.Middle;
+                label3.size = new Vector2(90, 30);
+
+                var label4 = UIX.Label(panel, "Build mode", new Vector3(10, 170));
+                label4.textAlignment = UIHorizontalAlignment.Right;
+                label4.verticalAlignment = UIVerticalAlignment.Middle;
+                label4.size = new Vector2(90, 30);
+
+                var label5 = UIX.Label(panel, "Networks", new Vector3(10, 230));
+                label5.textAlignment = UIHorizontalAlignment.Right;
+                label5.verticalAlignment = UIVerticalAlignment.Middle;
+                label5.size = new Vector2(90, 30);
+
+                var label6 = UIX.Label(panel, "Props", new Vector3(10, 270));
+                label6.textAlignment = UIHorizontalAlignment.Right;
+                label6.verticalAlignment = UIVerticalAlignment.Middle;
                 RefreshButtons();
+            }
+        }
+
+        void panel_eventVisibilityChanged(UIComponent component, bool value)
+        {
+            if (value == false)
+            {
+                var tool_controler = UIView.FindObjectOfType<ToolController>();
+                tool_controler.CurrentTool = tool_controler.Tools[0];
+                Debug.Log("hidden");
             }
         }
 
